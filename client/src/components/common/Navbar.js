@@ -70,7 +70,7 @@ const Header = () => {
             </Nav.Link>
             <Nav.Link
               as={NavLink}
-              to="/signup"
+              to="/register"
               activeClassName="active"
               className="text-primary"
             >
@@ -126,7 +126,7 @@ const Header = () => {
         <Link to="/login" style={{ color: "#007bff", textDecoration: "none" }}>
           <FaSignInAlt style={{ fontSize: "24px" }} />
         </Link>
-        <Link to="/signup" style={{ color: "#007bff", textDecoration: "none" }}>
+        <Link to="/register" style={{ color: "#007bff", textDecoration: "none" }}>
           <FaUserPlus style={{ fontSize: "24px" }} />
         </Link>
         <Link
