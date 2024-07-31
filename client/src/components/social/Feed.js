@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, Button, Spinner, Alert, Container } from "react-bootstrap";
-import { generateMockPosts } from "../mockdata";
+import { generateMockPosts } from "../../mockdata";
 import _ from "lodash";
 
 const Feed = () => {
