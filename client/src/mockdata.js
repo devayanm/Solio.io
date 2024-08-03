@@ -1,8 +1,10 @@
+import { v4 as uuidv4 } from "uuid";
+
 export const generateMockPosts = (page, limit) => {
   const posts = [];
   for (let i = 0; i < limit; i++) {
     posts.push({
-      id: (page - 1) * limit + i + 1,
+      id: uuidv4(),
       title: `Post Title ${(page - 1) * limit + i + 1}`,
       description: `This is a description for post ${
         (page - 1) * limit + i + 1

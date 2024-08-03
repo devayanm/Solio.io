@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import {
   Spinner,
   Alert,
@@ -10,34 +9,63 @@ import {
   Tooltip,
   ProgressBar,
   InputGroup,
+  Modal,
 } from "react-bootstrap";
 import { FiEye, FiEyeOff, FiInfo } from "react-icons/fi";
+import { registerUser } from "../../services/api"; 
+
+const ConfirmationModal = ({ show, onClose, message }) => {
+  return (
+    <Modal show={show} onHide={onClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Confirmation</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>{message}</Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    collegeId: "",
+    username: "",
     password: "",
-    name: "",
+    fullName: "",
     email: "",
+    avatar: null,
+    coverImage: null,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { register } = useAuth();
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.type === "file") {
+      setFormData({ ...formData, [e.target.name]: e.target.files[0] });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    }
   };
 
   const validateForm = () => {
-    const { collegeId, password, name, email } = formData;
-    if (!collegeId || !password || !name || !email) {
+    const { username, password, fullName, email, avatar } = formData;
+    if (!username || !password || !fullName || !email) {
       setError("All fields are required.");
       return false;
     }
     if (password.length < 8) {
       setError("Password must be at least 8 characters long.");
+      return false;
+    }
+    if (!avatar) {
+      setError("Avatar file is required.");
       return false;
     }
     return true;
@@ -61,19 +89,41 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     setLoading(true);
     setError("");
+    setSuccess("");
     try {
-      await register(formData);
-      navigate("/login");
+      const formDataToSubmit = new FormData();
+      formDataToSubmit.append("username", formData.username);
+      formDataToSubmit.append("password", formData.password);
+      formDataToSubmit.append("fullName", formData.fullName);
+      formDataToSubmit.append("email", formData.email);
+      formDataToSubmit.append("avatar", formData.avatar);
+      formDataToSubmit.append("coverImage", formData.coverImage);
+
+      const response = await registerUser(formDataToSubmit);
+      setSuccess("Registration successful! Redirecting to login...");
+      setShowConfirmation(true);
+      console.log(response);
     } catch (err) {
-      setError("Failed to register. Please try again.");
+      console.error("Registration error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to register. Please try again later."
+      );
+    } finally {
       setLoading(false);
     }
   };
 
+  const handleConfirmationClose = () => {
+    setShowConfirmation(false);
+    navigate("/login"); // Adjust the path as needed
+  };
+
   const togglePasswordVisibility = () => {
-    setShowPassword((prevShowPassword) => !prevShowPassword);
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -81,22 +131,23 @@ const Register = () => {
       <div className="row justify-content-center">
         <div className="col-lg-6 col-md-8 col-sm-10">
           <h2 className="text-center mb-4">Register</h2>
+          {success && (
+            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
+              {success}
+            </Alert>
+          )}
           {error && (
             <Alert variant="danger" onClose={() => setError("")} dismissible>
               {error}
             </Alert>
           )}
           <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="formCollegeId" className="mb-3">
+            <Form.Group controlId="formUsername" className="mb-3">
               <Form.Label>
-                College ID{" "}
+                Username{" "}
                 <OverlayTrigger
                   placement="right"
-                  overlay={
-                    <Tooltip>
-                      Your unique college identification number.
-                    </Tooltip>
-                  }
+                  overlay={<Tooltip>Your unique username.</Tooltip>}
                 >
                   <span className="info-icon">
                     <FiInfo />
@@ -105,15 +156,15 @@ const Register = () => {
               </Form.Label>
               <Form.Control
                 type="text"
-                name="collegeId"
-                placeholder="Enter your College ID"
-                value={formData.collegeId}
+                name="username"
+                placeholder="Enter your Username"
+                value={formData.username}
                 onChange={handleChange}
                 required
-                isInvalid={error && !formData.collegeId}
+                isInvalid={error && !formData.username}
               />
               <Form.Control.Feedback type="invalid">
-                College ID is required.
+                Username is required.
               </Form.Control.Feedback>
             </Form.Group>
             <Form.Group controlId="formPassword" className="mb-3">
@@ -171,16 +222,12 @@ const Register = () => {
                 Use a mix of uppercase, lowercase, and numbers.
               </Form.Text>
             </Form.Group>
-            <Form.Group controlId="formName" className="mb-3">
+            <Form.Group controlId="formFullName" className="mb-3">
               <Form.Label>
-                Name{" "}
+                Full Name{" "}
                 <OverlayTrigger
                   placement="right"
-                  overlay={
-                    <Tooltip>
-                      Your full name as registered in the college.
-                    </Tooltip>
-                  }
+                  overlay={<Tooltip>Your full name as registered.</Tooltip>}
                 >
                   <span className="info-icon">
                     <FiInfo />
@@ -189,15 +236,15 @@ const Register = () => {
               </Form.Label>
               <Form.Control
                 type="text"
-                name="name"
-                placeholder="Enter your name"
-                value={formData.name}
+                name="fullName"
+                placeholder="Enter your full name"
+                value={formData.fullName}
                 onChange={handleChange}
                 required
-                isInvalid={error && !formData.name}
+                isInvalid={error && !formData.fullName}
               />
               <Form.Control.Feedback type="invalid">
-                Name is required.
+                Full name is required.
               </Form.Control.Feedback>
             </Form.Group>
             <Form.Group controlId="formEmail" className="mb-3">
@@ -229,6 +276,44 @@ const Register = () => {
                 Valid email is required.
               </Form.Control.Feedback>
             </Form.Group>
+            <Form.Group controlId="formAvatar" className="mb-3">
+              <Form.Label>
+                Avatar{" "}
+                <OverlayTrigger
+                  placement="right"
+                  overlay={<Tooltip>Upload your profile picture.</Tooltip>}
+                >
+                  <span className="info-icon">
+                    <FiInfo />
+                  </span>
+                </OverlayTrigger>
+              </Form.Label>
+              <Form.Control
+                type="file"
+                name="avatar"
+                accept="image/*"
+                onChange={handleChange}
+              />
+            </Form.Group>
+            <Form.Group controlId="formCoverImage" className="mb-3">
+              <Form.Label>
+                Cover Image{" "}
+                <OverlayTrigger
+                  placement="right"
+                  overlay={<Tooltip>Upload your cover image.</Tooltip>}
+                >
+                  <span className="info-icon">
+                    <FiInfo />
+                  </span>
+                </OverlayTrigger>
+              </Form.Label>
+              <Form.Control
+                type="file"
+                name="coverImage"
+                accept="image/*"
+                onChange={handleChange}
+              />
+            </Form.Group>
             <div className="d-flex justify-content-between align-items-center">
               <Button variant="secondary" onClick={() => navigate("/")}>
                 Back to Home
@@ -242,6 +327,13 @@ const Register = () => {
               </Button>
             </div>
           </Form>
+          {showConfirmation && (
+            <ConfirmationModal
+              show={showConfirmation}
+              onClose={handleConfirmationClose}
+              message="Registration successful! Redirecting to login..."
+            />
+          )}
         </div>
       </div>
     </div>

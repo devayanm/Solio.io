@@ -126,7 +126,10 @@ const Header = () => {
         <Link to="/login" style={{ color: "#007bff", textDecoration: "none" }}>
           <FaSignInAlt style={{ fontSize: "24px" }} />
         </Link>
-        <Link to="/register" style={{ color: "#007bff", textDecoration: "none" }}>
+        <Link
+          to="/register"
+          style={{ color: "#007bff", textDecoration: "none" }}
+        >
           <FaUserPlus style={{ fontSize: "24px" }} />
         </Link>
         <Link

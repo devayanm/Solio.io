@@ -18,20 +18,15 @@ const Feed = () => {
   const loadPosts = async (pageNum) => {
     setLoading(true);
     try {
-      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 500));
       const newPosts = generateMockPosts(pageNum, 10);
 
-      // If there are no new posts, start fetching from the beginning
       if (newPosts.length === 0) {
-        setPage(1);
-        setPosts([]);
-        setHasMore(true);
+        setHasMore(false);
         return;
       }
 
       setPosts((prevPosts) => [...prevPosts, ...newPosts]);
-      setPage((prevPage) => prevPage + 1);
     } catch (error) {
       setError("Failed to load posts.");
     } finally {
@@ -44,16 +39,19 @@ const Feed = () => {
     []
   );
 
-  const lastPostElementRef = (node) => {
-    if (loading || !hasMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        debouncedLoadPosts(page);
-      }
-    });
-    if (node) observer.current.observe(node);
-  };
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loading || !hasMore) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          debouncedLoadPosts(page);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore, debouncedLoadPosts, page]
+  );
 
   const retryFetch = () => {
     setError(null);
@@ -71,7 +69,7 @@ const Feed = () => {
       {posts.length === 0 && !loading && !error && <p>No posts available.</p>}
       {posts.map((post, index) => (
         <Card
-          key={post.id}
+          key={`${post.id}-${index}`}
           className="mb-3"
           ref={posts.length === index + 1 ? lastPostElementRef : null}
         >

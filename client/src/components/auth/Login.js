@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import {
   Spinner,
   Alert,
@@ -9,34 +8,73 @@ import {
   InputGroup,
   OverlayTrigger,
   Tooltip,
+  Modal,
 } from "react-bootstrap";
 import { FiInfo, FiEye, FiEyeOff } from "react-icons/fi";
+import { loginUser } from "../../services/api";
+
+const ConfirmationModal = ({ show, onClose, message }) => {
+  return (
+    <Modal show={show} onHide={onClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Confirmation</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>{message}</Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
+    setSuccess("");
+    setLoading(true);
     try {
-      await login(email, password, rememberMe);
-      navigate("/");
+      const response = await loginUser({
+        username: identifier,
+        password,
+      });
+      setSuccess("Login successful!");
+      setLoading(false);
+
+      // Set the httpOnly cookie
+      document.cookie = `accessToken=${response.data.accessToken}; httpOnly; path=/`;
+      document.cookie = `refreshToken=${response.data.refreshToken}; httpOnly; path=/`;
+
+      // Optionally, you can redirect the user to another page
+      navigate("/profile");
     } catch (error) {
-      setError("Failed to login. Please check your credentials and try again.");
+      setError(error.message);
       setLoading(false);
     }
   };
 
+  const handleConfirmationClose = () => {
+    setShowConfirmation(false);
+    navigate("/profile"); // Adjust navigation if needed
+    // Optionally reset form fields here
+    setIdentifier("");
+    setPassword("");
+  };
+
   const togglePasswordVisibility = () => {
-    setShowPassword((prevShowPassword) => !prevShowPassword);
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -44,18 +82,25 @@ const Login = () => {
       <div className="row justify-content-center">
         <div className="col-lg-6 col-md-8 col-sm-10">
           <h2 className="text-center mb-4">Login</h2>
+          {success && (
+            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
+              {success}
+            </Alert>
+          )}
           {error && (
             <Alert variant="danger" onClose={() => setError("")} dismissible>
               {error}
             </Alert>
           )}
           <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="formEmail" className="mb-3">
+            <Form.Group controlId="formIdentifier" className="mb-3">
               <Form.Label>
-                Email{" "}
+                Email or Username
                 <OverlayTrigger
                   placement="right"
-                  overlay={<Tooltip>Your registered email address.</Tooltip>}
+                  overlay={
+                    <Tooltip>Your registered email or username.</Tooltip>
+                  }
                 >
                   <span className="info-icon">
                     <FiInfo />
@@ -64,22 +109,17 @@ const Login = () => {
               </Form.Label>
               <InputGroup>
                 <Form.Control
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  placeholder="Enter your email or username"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  aria-describedby="emailHelpBlock"
-                  isInvalid={error && !email}
+                  isInvalid={error && !identifier}
                 />
               </InputGroup>
               <Form.Control.Feedback type="invalid">
-                Please provide a valid email.
+                Please provide a valid email or username.
               </Form.Control.Feedback>
-              <Form.Text id="emailHelpBlock" muted>
-                We'll never share your email with anyone else.
-              </Form.Text>
             </Form.Group>
 
             <Form.Group controlId="formPassword" className="mb-3">
@@ -102,12 +142,10 @@ const Login = () => {
               <InputGroup>
                 <Form.Control
                   type={showPassword ? "text" : "password"}
-                  id="password"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  aria-describedby="passwordHelpBlock"
                   isInvalid={error && !password}
                 />
                 <Button
@@ -121,9 +159,6 @@ const Login = () => {
               <Form.Control.Feedback type="invalid">
                 Please enter your password.
               </Form.Control.Feedback>
-              <Form.Text id="passwordHelpBlock" muted>
-                Ensure your password is strong and secure.
-              </Form.Text>
             </Form.Group>
 
             <Form.Group controlId="formRememberMe" className="mb-3">
@@ -156,6 +191,13 @@ const Login = () => {
           </Form>
         </div>
       </div>
+      {showConfirmation && (
+        <ConfirmationModal
+          show={showConfirmation}
+          onClose={handleConfirmationClose}
+          message="Login successful! Redirecting to the profile page."
+        />
+      )}
     </div>
   );
 };
