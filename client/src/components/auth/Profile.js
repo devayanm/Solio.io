@@ -117,10 +117,12 @@ const Profile = () => {
       };
 
       const response = await updateAccountDetails(updatedProfile);
+
+      // Assuming response.data contains the updated user data
       if (response.data) {
-        setProfile(response.data);
-        setEditing(false);
-        setError("");
+        setProfile(response.data); // Update the profile state
+        setEditing(false); // Exit editing mode
+        setError(""); // Clear any existing error
       } else {
         setError("Failed to update profile.");
       }

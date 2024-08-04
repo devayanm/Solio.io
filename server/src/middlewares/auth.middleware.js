@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     let token = null;
 
@@ -18,10 +18,8 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
       token = req.cookies.accessToken;
     }
 
-    console.log("Token:", token);
-
     if (!token) {
-      throw new ApiError(401, "Unauthorized request");
+      throw new ApiError(401, "No token provided. Unauthorized request");
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -31,12 +29,13 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     );
 
     if (!user) {
-      throw new ApiError(401, "Invalid Access Token");
+      throw new ApiError(403, "User not found. Invalid Access Token");
     }
 
     req.user = user;
-    next();
+    next(); 
   } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid access token");
+    console.error("JWT Verification Error:", error.message);
+    throw new ApiError(401, "Invalid access token");
   }
 });

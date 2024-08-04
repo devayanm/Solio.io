@@ -4,23 +4,31 @@ const api = axios.create({
   baseURL: "http://localhost:5000/api/v1/users",
 });
 
+
+const handleApiError = (error) => {
+  if (error.response && error.response.data) {
+    return error.response.data.message || "An unexpected error occurred.";
+  } else if (error.request) {
+    return "Network error. Please check your internet connection.";
+  } else {
+    return "An unexpected error occurred: " + error.message;
+  }
+};
+
 const registerUser = async (userData) => {
   try {
     const response = await api.post("/register", userData);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(handleApiError(error));
   }
 };
 
 const loginUser = async (userData) => {
   try {
     const response = await api.post("/login", userData);
-
-    console.log("Login Response:", response); // Log the response
-
     const { data } = response || {};
-    const { accessToken, refreshToken } = data.data || {}; // Access accessToken and refreshToken from response.data.data
+    const { accessToken, refreshToken } = data.data || {};
 
     if (!accessToken || !refreshToken) {
       throw new Error("Access token or refresh token not provided");
@@ -31,11 +39,7 @@ const loginUser = async (userData) => {
 
     return data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw error.response.data;
-    } else {
-      throw new Error("Failed to login: " + error.message);
-    }
+    throw new Error(handleApiError(error));
   }
 };
 
@@ -116,28 +120,57 @@ const getCurrentUser = async () => {
 
 const updateAccountDetails = async (accountData) => {
   try {
-    const response = await api.patch("/update-account", accountData);
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (!accessToken) {
+      throw new Error("Access token not found");
+    }
+
+    const response = await api.patch("/update-account", accountData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    if (error.response && error.response.data) {
+      throw error.response.data;
+    } else {
+      throw new Error("Failed to update account details: " + error.message);
+    }
   }
 };
 
-const updateUserAvatar = async (avatarData) => {
+
+const updateUserAvatar = async (avatarFile) => {
   try {
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (!accessToken) {
+      throw new Error("Access token not found");
+    }
+
     const formData = new FormData();
-    formData.append("avatar", avatarData);
+    formData.append("avatar", avatarFile);
 
     const response = await api.patch("/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${accessToken}`,
       },
     });
+
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    if (error.response && error.response.data) {
+      throw error.response.data;
+    } else {
+      throw new Error("Failed to update avatar: " + error.message);
+    }
   }
 };
+
 
 const updateUserCoverImage = async (coverImageData) => {
   try {

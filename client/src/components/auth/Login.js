@@ -29,6 +29,27 @@ const ConfirmationModal = ({ show, onClose, message }) => {
   );
 };
 
+const ErrorModal = ({ show, onClose, message, onCreateAccount }) => {
+  return (
+    <Modal show={show} onHide={onClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Error</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>{message}</Modal.Body>
+      <Modal.Footer>
+        {onCreateAccount && (
+          <Button variant="primary" onClick={onCreateAccount}>
+            Create a new account
+          </Button>
+        )}
+        <Button variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
 const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +59,7 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -53,24 +75,31 @@ const Login = () => {
       setSuccess("Login successful!");
       setLoading(false);
 
-      // Set the httpOnly cookie
       document.cookie = `accessToken=${response.data.accessToken}; httpOnly; path=/`;
       document.cookie = `refreshToken=${response.data.refreshToken}; httpOnly; path=/`;
 
-      // Optionally, you can redirect the user to another page
       navigate("/profile");
     } catch (error) {
       setError(error.message);
       setLoading(false);
+      setShowErrorModal(true);
     }
   };
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    navigate("/profile"); // Adjust navigation if needed
-    // Optionally reset form fields here
+    navigate("/profile");
     setIdentifier("");
     setPassword("");
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+  };
+
+  const handleCreateAccount = () => {
+    setShowErrorModal(false);
+    navigate("/register");
   };
 
   const togglePasswordVisibility = () => {
@@ -196,6 +225,14 @@ const Login = () => {
           show={showConfirmation}
           onClose={handleConfirmationClose}
           message="Login successful! Redirecting to the profile page."
+        />
+      )}
+      {showErrorModal && (
+        <ErrorModal
+          show={showErrorModal}
+          onClose={handleErrorModalClose}
+          errorMessage={error}
+          onCreateAccount={handleCreateAccount}
         />
       )}
     </div>

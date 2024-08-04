@@ -26,11 +26,12 @@ const userSchema = new Schema(
       index: true,
     },
     avatar: {
-      type: String, // cloudinary url
-      required: true,
+      type: String,
+      required: true, // cloudinary url
     },
     coverImage: {
-      type: String, // cloudinary url
+      type: String,
+      default: "", // cloudinary url
     },
     password: {
       type: String,
@@ -38,36 +39,38 @@ const userSchema = new Schema(
     },
     refreshToken: {
       type: String,
+      default: "",
     },
     bio: {
       type: String,
       trim: true,
+      default: "",
     },
     socialLinks: {
-      facebook: String,
-      twitter: String,
-      linkedin: String,
-      github: String,
-      instagram: String,
+      facebook: { type: String, default: "" },
+      twitter: { type: String, default: "" },
+      linkedin: { type: String, default: "" },
+      github: { type: String, default: "" },
+      instagram: { type: String, default: "" },
     },
     academicInfo: {
-      studentId: String,
-      course: String,
-      department: String,
-      year: String,
-      gpa: String,
-      courses: [String],
-      achievements: [String],
-      attendance: Number,
+      studentId: { type: String, default: "" },
+      course: { type: String, default: "" },
+      department: { type: String, default: "" },
+      year: { type: String, default: "" },
+      gpa: { type: String, default: "" },
+      courses: { type: [String], default: [] },
+      achievements: { type: [String], default: [] },
+      attendance: { type: Number, default: 0 },
     },
     contactInfo: {
-      phone: String,
+      phone: { type: String, default: "" },
       address: {
-        street: String,
-        city: String,
-        state: String,
-        postalCode: String,
-        country: String,
+        street: { type: String, default: "" },
+        city: { type: String, default: "" },
+        state: { type: String, default: "" },
+        postalCode: { type: String, default: "" },
+        country: { type: String, default: "" },
       },
     },
     preferences: {
@@ -89,12 +92,20 @@ const userSchema = new Schema(
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  try {
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
-  return await bcrypt.compare(password, this.password);
+  try {
+    return await bcrypt.compare(password, this.password);
+  } catch (error) {
+    throw new Error("Error comparing passwords");
+  }
 };
 
 userSchema.methods.generateAccessToken = function () {
