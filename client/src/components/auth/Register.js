@@ -12,7 +12,7 @@ import {
   Modal,
 } from "react-bootstrap";
 import { FiEye, FiEyeOff, FiInfo } from "react-icons/fi";
-import { registerUser } from "../../services/api";
+import { registerUser } from "../../services/api"; 
 
 const ConfirmationModal = ({ show, onClose, message }) => {
   return (
@@ -108,7 +108,10 @@ const Register = () => {
       console.log(response);
     } catch (err) {
       console.error("Registration error:", err);
-      setError(err.message || "Failed to register. Please try again later.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to register. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
@@ -116,7 +119,7 @@ const Register = () => {
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    navigate("/login");
+    navigate("/login"); // Adjust the path as needed
   };
 
   const togglePasswordVisibility = () => {
@@ -278,7 +281,7 @@ const Register = () => {
                 Avatar{" "}
                 <OverlayTrigger
                   placement="right"
-                  overlay={<Tooltip>Upload your avatar image.</Tooltip>}
+                  overlay={<Tooltip>Upload your profile picture.</Tooltip>}
                 >
                   <span className="info-icon">
                     <FiInfo />
@@ -290,12 +293,7 @@ const Register = () => {
                 name="avatar"
                 accept="image/*"
                 onChange={handleChange}
-                required
-                isInvalid={error && !formData.avatar}
               />
-              <Form.Control.Feedback type="invalid">
-                Avatar file is required.
-              </Form.Control.Feedback>
             </Form.Group>
             <Form.Group controlId="formCoverImage" className="mb-3">
               <Form.Label>
@@ -316,20 +314,26 @@ const Register = () => {
                 onChange={handleChange}
               />
             </Form.Group>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={loading}
-              className="w-100"
-            >
-              {loading ? <Spinner animation="border" /> : "Register"}
-            </Button>
+            <div className="d-flex justify-content-between align-items-center">
+              <Button variant="secondary" onClick={() => navigate("/")}>
+                Back to Home
+              </Button>
+              <Button variant="primary" type="submit" disabled={loading}>
+                {loading ? (
+                  <Spinner animation="border" size="sm" />
+                ) : (
+                  "Register"
+                )}
+              </Button>
+            </div>
           </Form>
-          <ConfirmationModal
-            show={showConfirmation}
-            onClose={handleConfirmationClose}
-            message={success}
-          />
+          {showConfirmation && (
+            <ConfirmationModal
+              show={showConfirmation}
+              onClose={handleConfirmationClose}
+              message="Registration successful! Redirecting to login..."
+            />
+          )}
         </div>
       </div>
     </div>
