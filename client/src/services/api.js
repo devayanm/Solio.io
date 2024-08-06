@@ -1,9 +1,47 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:5000/api/v1/users",
-});
+const API_BASE_URLS = [
+    process.env.REACT_APP_API_BASE_URL_PROD,
+    process.env.REACT_APP_API_BASE_URL_DEV
+];
 
+const checkBackendUrlAccessibility = async (url) => {
+    try {
+        const response = await axios.get(`${url}/users/help`);
+        if (response.status === 200 && response.data.message === 'This is the help message for your API.') {
+            console.log(`Backend URL ${url} is accessible.`);
+            return url;
+        }
+    } catch (error) {
+        console.error(`Error accessing backend URL ${url}: ${error.message}`);
+    }
+    return null;
+};
+
+const initializeApi = async () => {
+    try {
+        for (const url of API_BASE_URLS) {
+            const accessibleUrl = await checkBackendUrlAccessibility(url);
+            if (accessibleUrl) {
+                console.log('Using backend URL:', accessibleUrl);
+                return axios.create({ baseURL: accessibleUrl });
+            }
+        }
+        throw new Error('No accessible backend URL found.');
+    } catch (error) {
+        console.error('Error initializing API:', error.message);
+        throw error;
+    }
+};
+
+const api = (async () => {
+    try {
+        return await initializeApi();
+    } catch (error) {
+        console.error('Failed to initialize API:', error.message);
+        return axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL_DEV });
+    }
+})();
 
 const handleApiError = (error) => {
   if (error.response && error.response.data) {
