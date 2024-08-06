@@ -1,47 +1,50 @@
 import axios from "axios";
 
 const API_BASE_URLS = [
-    process.env.REACT_APP_API_BASE_URL_PROD,
-    process.env.REACT_APP_API_BASE_URL_DEV
+  process.env.REACT_APP_API_BASE_URL_PROD,
+  process.env.REACT_APP_API_BASE_URL_DEV,
 ];
 
 const checkBackendUrlAccessibility = async (url) => {
-    try {
-        const response = await axios.get(`${url}/help`);
-        if (response.status === 200 && response.data.message === 'This is the help message for your API.') {
-            console.log(`Backend URL ${url} is accessible.`);
-            return url;
-        }
-    } catch (error) {
-        console.error(`Error accessing backend URL ${url}: ${error.message}`);
+  try {
+    const response = await axios.get(`${url}/help`);
+    if (
+      response.status === 200 &&
+      response.data.message === "This is the help message for your API."
+    ) {
+      console.log(`Backend URL ${url} is accessible.`);
+      return url;
     }
-    return null;
+  } catch (error) {
+    console.error(`Error accessing backend URL ${url}: ${error.message}`);
+  }
+  return null;
 };
 
 const initializeApi = async () => {
-    try {
-        for (const url of API_BASE_URLS) {
-            const accessibleUrl = await checkBackendUrlAccessibility(url);
-            if (accessibleUrl) {
-                console.log('Using backend URL:', accessibleUrl);
-                return axios.create({ baseURL: accessibleUrl });
-            }
-        }
-        throw new Error('No accessible backend URL found.');
-    } catch (error) {
-        console.error('Error initializing API:', error.message);
-        throw error;
+  try {
+    for (const url of API_BASE_URLS) {
+      const accessibleUrl = await checkBackendUrlAccessibility(url);
+      if (accessibleUrl) {
+        console.log("Using backend URL:", accessibleUrl);
+        return axios.create({ baseURL: accessibleUrl });
+      }
     }
+    throw new Error("No accessible backend URL found.");
+  } catch (error) {
+    console.error("Error initializing API:", error.message);
+    throw error;
+  }
 };
 
-const api = (async () => {
-    try {
-        return await initializeApi();
-    } catch (error) {
-        console.error('Failed to initialize API:', error.message);
-        return axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL_DEV });
-    }
-})();
+const getApiInstance = async () => {
+  try {
+    return await initializeApi();
+  } catch (error) {
+    console.error("Failed to initialize API:", error.message);
+    return axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL_DEV });
+  }
+};
 
 const handleApiError = (error) => {
   if (error.response && error.response.data) {
@@ -54,6 +57,7 @@ const handleApiError = (error) => {
 };
 
 const registerUser = async (userData) => {
+  const api = await getApiInstance();
   try {
     const response = await api.post("/register", userData);
     return response.data;
@@ -63,6 +67,7 @@ const registerUser = async (userData) => {
 };
 
 const loginUser = async (userData) => {
+  const api = await getApiInstance();
   try {
     const response = await api.post("/login", userData);
     const { data } = response || {};
@@ -82,6 +87,7 @@ const loginUser = async (userData) => {
 };
 
 const logoutUser = async () => {
+  const api = await getApiInstance();
   try {
     const accessToken = localStorage.getItem("accessToken");
 
@@ -110,6 +116,7 @@ const logoutUser = async () => {
 };
 
 const refreshAccessToken = async () => {
+  const api = await getApiInstance();
   try {
     const response = await api.post("/refresh-token", {
       refreshToken: localStorage.getItem("refreshToken"),
@@ -119,20 +126,22 @@ const refreshAccessToken = async () => {
 
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(handleApiError(error));
   }
 };
 
 const changeCurrentPassword = async (passwordData) => {
+  const api = await getApiInstance();
   try {
     const response = await api.post("/change-password", passwordData);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(handleApiError(error));
   }
 };
 
 const getCurrentUser = async () => {
+  const api = await getApiInstance();
   try {
     const accessToken = localStorage.getItem("accessToken");
 
@@ -148,15 +157,12 @@ const getCurrentUser = async () => {
 
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw error.response.data;
-    } else {
-      throw new Error("Failed to fetch user data: " + error.message);
-    }
+    throw new Error(handleApiError(error));
   }
 };
 
 const updateAccountDetails = async (accountData) => {
+  const api = await getApiInstance();
   try {
     const accessToken = localStorage.getItem("accessToken");
 
@@ -172,16 +178,12 @@ const updateAccountDetails = async (accountData) => {
 
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw error.response.data;
-    } else {
-      throw new Error("Failed to update account details: " + error.message);
-    }
+    throw new Error(handleApiError(error));
   }
 };
 
-
 const updateUserAvatar = async (avatarFile) => {
+  const api = await getApiInstance();
   try {
     const accessToken = localStorage.getItem("accessToken");
 
@@ -201,16 +203,12 @@ const updateUserAvatar = async (avatarFile) => {
 
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw error.response.data;
-    } else {
-      throw new Error("Failed to update avatar: " + error.message);
-    }
+    throw new Error(handleApiError(error));
   }
 };
 
-
 const updateUserCoverImage = async (coverImageData) => {
+  const api = await getApiInstance();
   try {
     const formData = new FormData();
     formData.append("coverImage", coverImageData);
@@ -222,16 +220,17 @@ const updateUserCoverImage = async (coverImageData) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(handleApiError(error));
   }
 };
 
 const help = async () => {
+  const api = await getApiInstance();
   try {
-    const response = await api.get(`/help`);
+    const response = await api.get("/help");
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(handleApiError(error));
   }
 };
 
