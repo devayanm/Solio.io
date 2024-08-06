@@ -7,7 +7,7 @@ const API_BASE_URLS = [
 
 const checkBackendUrlAccessibility = async (url) => {
     try {
-        const response = await axios.get(`${url}/users/help`);
+        const response = await axios.get(`${url}/help`);
         if (response.status === 200 && response.data.message === 'This is the help message for your API.') {
             console.log(`Backend URL ${url} is accessible.`);
             return url;
