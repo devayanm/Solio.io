@@ -26,7 +26,7 @@ const Header = () => {
           <Nav className="mr-auto">
             <Nav.Link
               as={NavLink}
-              to="/social"
+              to="/"
               activeClassName="active"
               className="text-primary"
             >
@@ -114,7 +114,7 @@ const Header = () => {
         }}
         className="d-lg-none"
       >
-        <Link to="/social" style={{ color: "#007bff", textDecoration: "none" }}>
+        <Link to="/" style={{ color: "#007bff", textDecoration: "none" }}>
           <FaHome style={{ fontSize: "24px" }} />
         </Link>
         <Link

@@ -1,14 +1,14 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "backend for Assethub",
+  "description": "backend for Solio.io",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "start": "node -e \"require('mkdirp').sync('public/temp');\" && node src/index.js"
   },
-  "author": "Biplab mal",
+  "author": "Devayan Mandal",
   "license": "ISC",
   "devDependencies": {
     "mkdirp": "^3.0.1",
